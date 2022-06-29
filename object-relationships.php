@@ -3,7 +3,7 @@
  * Plugin Name: Object Relationships
  * Plugin URI: https://timkaye.org
  * Description: Enables relationships between objects (and associated meta data) to be stored in dedicated database tables
- * Version: 0.2.1
+ * Version: 0.2.2
  * Author: Tim Kaye
  * Author URI: https://timkaye.org
 */
