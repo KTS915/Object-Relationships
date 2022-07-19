@@ -398,6 +398,90 @@ function kts_get_object_relationship_ids( $left_object_id, $left_object_type, $r
 }
 
 
+/* GET TYPE OF RELATED OBJECT */
+function kts_get_object_relationship_type( $left_object_id, $left_object_type, $right_object_id ) {
+
+	# Error if $left_object_id is not a positive integer
+	if ( filter_var( $left_object_id, FILTER_VALIDATE_INT ) === false ) {
+
+		$item = 'string';
+		if ( $left_object_id === 0 ) {
+			$item = 0;
+		}
+		elseif ( is_object( $left_object_id ) ) {
+			$item = 'object';
+		}
+		elseif ( is_array( $left_object_id ) ) {
+			$item = 'array';
+		}
+
+		return new WP_Error( 'left_object_id', __( 'kts_add_object_relationship() expects parameter 1 to be a positive integer, ' . $item . ' given.' ) );
+	}
+
+	# Error if $right_object_id is not a positive integer
+	if ( filter_var( $right_object_id, FILTER_VALIDATE_INT ) === false ) {
+
+		$item = 'string';
+		if ( $right_object_id === 0 ) {
+			$item = 0;
+		}
+		elseif ( is_object( $right_object_id ) ) {
+			$item = 'object';
+		}
+		elseif ( is_array( $right_object_id ) ) {
+			$item = 'array';
+		}
+
+		return new WP_Error( 'right_object_id', __( 'kts_add_object_relationship() expects parameter 3 to be a positive integer, ' . $item . ' given.' ) );
+	}
+
+	$recognized_relationship_objects = kts_recognized_relationship_objects();
+	$object_list = implode( ', ', $recognized_relationship_objects );
+
+	# Error if $left_object_type is not a non-null string of an appropriate value
+	if ( ! in_array( $left_object_type, $recognized_relationship_objects ) ) {
+
+		$item = $left_object_type;
+		if ( is_int( $left_object_type ) ) {
+			$item = 'integer';
+		}
+		elseif ( is_object( $left_object_type ) ) {
+			$item = 'object';
+		}
+		elseif ( is_array( $left_object_type ) ) {
+			$item = 'array';
+		}
+
+		return new WP_Error( 'left_object_type', __( 'kts_add_object_relationship() expects parameter 2 to be one of ' . $object_list . ', ' . $item . ' given.' ) );
+	}
+
+	# Good to go!
+	global $wpdb;
+	$table_name = $wpdb->prefix . 'kts_object_relationships';
+
+	# Query the database table from left to right
+	$sql1 = $wpdb->prepare( "SELECT right_object_type FROM $table_name WHERE left_object_id = %d AND left_object_type = %s AND right_object_id = %d", $left_object_id, $left_object_type, $right_object_id );
+
+	# If there's a match, return the object type as a string
+	$row1 = $wpdb->get_row( $sql1 );
+	if ( ! empty( $row1 ) ) {
+		return $row1;
+	}
+
+	# Otherwise query the database table right to left
+	$sql2 = $wpdb->prepare( "SELECT left_object_type FROM $table_name WHERE right_object_id = %d AND right_object_type = %s AND left_object_id = %d", $left_object_id, $left_object_type, $right_object_id );
+
+	# If there's a match, return the object type as a string
+	$row2 = $wpdb->get_row( $sql2 );
+	if ( ! empty( $row2 ) ) {
+		return $row2;
+	}
+
+	# Otherwise return false
+	return false;
+}
+
+
 /* DELETE ALL RELATIONSHIP META WHEN RELATIONSHIP DELETED */
 function kts_delete_relationship_meta_when_relationship_deleted( $relationship_id ) {
 	$metas = get_relationship_meta( $relationship_id );
