@@ -394,12 +394,18 @@ function kts_get_object_relationship_ids( $left_object_id, $left_object_type, $r
 	}
 
 	# Return the above array
-	return $target_ids;
+	if ( ! empty( $target_ids ) ) {
+		return $target_ids;
+	}
+	else {
+		# Otherwise return false
+		return false;
+	}
 }
 
 
-/* GET TYPE OF RELATED OBJECT */
-function kts_get_object_relationship_type( $left_object_id, $left_object_type, $right_object_id ) {
+/* GET TYPES OF RELATED OBJECT */
+function kts_get_object_relationship_types( $left_object_id, $left_object_type, $right_object_id ) {
 
 	# Error if $left_object_id is not a positive integer
 	if ( filter_var( $left_object_id, FILTER_VALIDATE_INT ) === false ) {
@@ -462,23 +468,35 @@ function kts_get_object_relationship_type( $left_object_id, $left_object_type, $
 	# Query the database table from left to right
 	$sql1 = $wpdb->prepare( "SELECT right_object_type FROM $table_name WHERE left_object_id = %d AND left_object_type = %s AND right_object_id = %d", $left_object_id, $left_object_type, $right_object_id );
 
-	# If there's a match, return the object type as a string
-	$row1 = $wpdb->get_row( $sql1 );
-	if ( ! empty( $row1 ) ) {
-		return $row1;
-	}
-
-	# Otherwise query the database table right to left
+	# Query the database table right to left
 	$sql2 = $wpdb->prepare( "SELECT left_object_type FROM $table_name WHERE right_object_id = %d AND right_object_type = %s AND left_object_id = %d", $left_object_id, $left_object_type, $right_object_id );
 
-	# If there's a match, return the object type as a string
-	$row2 = $wpdb->get_row( $sql2 );
-	if ( ! empty( $row2 ) ) {
-		return $row2;
+	# Results are in the form of two objects
+	$rows1 = $wpdb->get_results( $sql1 );
+	$rows2 = $wpdb->get_results( $sql2 );
+
+	# Create array of target object IDs, starting with empty array
+	$target_types = [];
+	if ( ! empty( $rows1 ) ) {
+		foreach( $rows1 as $row ) {
+			$target_types[] = (string) $row->right_object_type; // cast each one as a string
+		}
 	}
 
-	# Otherwise return false
-	return false;
+	if ( ! empty( $rows2 ) ) {
+		foreach( $rows2 as $row ) {
+			$target_types[] = (string) $row->left_object_type; // cast each one as a string
+		}
+	}
+
+	# Return the above array
+	if ( ! empty( $target_types ) ) {
+		return $target_types;
+	}
+	else {
+		# Otherwise return false
+		return false;
+	}
 }
 
 
